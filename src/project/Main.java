@@ -25,7 +25,7 @@ public class Main {
                         if (!todos.isEmpty()) {
                             finishTodo();
                         } else {
-                            System.out.println("할일 업습니다.");
+                            System.out.println("할일 없습니다.");
                         }
                         break;
                     case 4:
@@ -47,7 +47,7 @@ public class Main {
  private static void printMenu() {
      System.out.println("\n Welcome!");
      if (todos.isEmpty()) {
-         System.out.println("할일없습니다!!!");
+         System.out.println("할일 없습니다!!!");
      } else {
          System.out.println("해야 할일은:");
          for (int i = 0; i < todos.size(); i++) {
@@ -65,7 +65,7 @@ public class Main {
         System.out.print("할일 입력하세요: ");
         String todo = scanner.nextLine();
         todos.add(todo);
-        System.out.println("할일 입력성공.");
+        System.out.println("할일 입력성공!!!");
     }
     private static void editTodo (Scanner scanner) {
         System.out.print("어떤 할일 수정하려고 합니까? ");
@@ -80,7 +80,7 @@ public class Main {
         System.out.println("수정 완료.");
     }
     private static void finishTodo () {
-        System.out.println("첫번쩨 할일 완료");
+        System.out.println("첫번째 할일 완료");
         todos.remove(0);
     }
 
