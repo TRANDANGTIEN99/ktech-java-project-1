@@ -1,97 +1,87 @@
 package project;
-import java.util.ArrayList;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.time.LocalDate;
 import java.util.List;
-import java.util.Scanner;
 
 public class Main {
-    private static final List<String> todos = new ArrayList<>();
-        public static void main(String[] args) {
-            Scanner scanner = new Scanner(System.in);
-            while (true) {
-                printMenu();
-                int ints = Integer.parseInt(scanner.nextLine());
-                switch (ints) {
-                    case 1:
-                        createTodo(scanner);
-                        break;
-                    case 2:
-                        if (!todos.isEmpty()) {
-                            editTodo(scanner);
-                        } else {
-                            System.out.println("수정할 일 없습니다");
-                        }
-                        break;
-                    case 3:
-                        if (!todos.isEmpty()) {
-                            finishTodo();
-                        } else {
-                            System.out.println("할일 없습니다.");
-                        }
-                        break;
-                    case 4:
-                        if (!todos.isEmpty()) {
-                            deleteTodo(scanner);
-                        } else {
-                            System.out.println("삭제할 일 없습니다");
-                        }
-                        break;
-                    case 5:
-                        System.out.println("나간다");
-                        scanner.close();
-                        return;
-                    default:
-                        System.out.println("다시 입력하세요");
-                }
+    private static List<Todo> todos;
+    public static void main(String[] args) throws IOException {
+        // 사용자 입력 받기용
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        // 데이터 관리용
+        TodoRepository repository = new TodoRepository();
+        todos = repository.getTodos();
+        // 실제 기능
+        TodoService service = new TodoService(reader, repository.getTodos());
+
+        while (true) {
+            // 첫화면 출력
+            printFirstScreen();
+            // 입력 안내
+            System.out.print("Input: ");
+            int selection;
+            try {
+                // 선택을 입력하다
+                selection = Integer.parseInt(reader.readLine());
+            } catch (NumberFormatException e) {
+                // 숫자가 아니면 `continue`로 다시 반복의 처음으로
+                System.out.println("Input must be an integer (1 ~ 5)");
+                continue;
+            }
+            // `5`의 경우 `break` (종료)
+            if (selection == 5) break;
+            // 그 외는 `switch - case - default`
+            switch (selection) {
+                case 1 -> service.createTodo();
+                case 2 -> service.editTodo();
+                case 3 -> service.finishTodo();
+                case 4 -> service.deleteTodo();
+                default -> System.out.println("Invalid selection, select from 1 to 5");
             }
         }
- private static void printMenu() {
-     System.out.println("\n Welcome!");
-     if (todos.isEmpty()) {
-         System.out.println("할일 없습니다!!!");
-     } else {
-         System.out.println("해야 할일은:");
-         for (int i = 0; i < todos.size(); i++) {
-             System.out.println((i + 1) + ": " + todos.get(i));
-         }
-     }
-     System.out.println("1. Create TODO ");
-     System.out.println("2. Edit TODO ");
-     System.out.println("3. Finish TODO ");
-     System.out.println("4. Delete TODO ");
-     System.out.println("5. Exit ");
-     System.out.print("Input: ");
- }
-    private static void createTodo (Scanner scanner) {
-        System.out.print("할일 입력하세요: ");
-        String todo = scanner.nextLine();
-        todos.add(todo);
-        System.out.println("할일 입력성공!!!");
-    }
-    private static void editTodo (Scanner scanner) {
-        System.out.print("어떤 할일 수정하려고 합니까? ");
-        int index = Integer.parseInt(scanner.nextLine()) - 1;
-        if (index < 0 || index >= todos.size()) {
-            System.out.println("잘못 입력하셨습니다");
-            return;
+
+        try {
+            repository.writeToFile();
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+            throw new RuntimeException(e);
         }
-        System.out.print("새로 할일 입력: ");
-        String newTodo = scanner.nextLine();
-        todos.set(index, newTodo);
-        System.out.println("수정 완료.");
-    }
-    private static void finishTodo () {
-        System.out.println("첫번째 할일 완료");
-        todos.remove(0);
     }
 
-    private static void deleteTodo (Scanner scanner) {
-        System.out.print("할일 삭제합니까? ");
-        int index = Integer.parseInt(scanner.nextLine()) - 1;
-        if (index < 0 || index >= todos.size()) {
-            System.out.println("다시 입력하세요");
-            return;
+    private static void printFirstScreen() {
+        System.out.println("Welcome!!!\n");
+        // 남은 할일 갯수 세기
+        int todosLeft = todos.stream()
+                .filter(todo -> !todo.isCompleted())
+                .mapToInt(todo -> 1)
+                .sum();
+        // 갯수에 따라 다른 출력 만들기
+        switch (todosLeft) {
+            case 0 -> System.out.println("You have no more TODOs left!!!");
+            case 1 -> System.out.println("You have 1 TODO left.\n");
+            default -> System.out.println("You have " + todosLeft + " TODOs left.\n");
         }
-        todos.remove(index);
-        System.out.println("삭제 완료");
+
+        // 각 TODO를 한번에 출력하기 위한 StringBuilder
+        StringBuilder todoBuilder = new StringBuilder();
+        for (int i = 0; i < todos.size(); i++) {
+            Todo todo = todos.get(i);
+            if (todo.isCompleted() && todo.getDueDate().isBefore(LocalDate.now())) continue;
+            todoBuilder.append(i + 1).append(". ");
+            todoBuilder.append(todo.getTitle());
+            if (todo.isCompleted()) todoBuilder.append(" (Done)");
+            todoBuilder.append('\n');
+        }
+        // 선택지 출력
+        System.out.println(todoBuilder);
+        System.out.println("1. Create TODO");
+        System.out.println("2. Edit TODO");
+        System.out.println("3. Finish TODO");
+        System.out.println("4. Delete TODO");
+        System.out.println("5. Exit");
+        System.out.println();
     }
 }
